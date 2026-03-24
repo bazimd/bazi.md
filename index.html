@@ -9,6 +9,7 @@
     <meta name="theme-color" content="#f5f0e8" media="(prefers-color-scheme: light)" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="author" content="Douglas Lai (https://github.com/Douglasymlai)" />
     <title>BAZI.md Generator</title>
     <meta
       name="description"
@@ -127,6 +128,37 @@
         border: 1px solid rgba(39, 45, 61, 0.1);
         background: rgba(255, 255, 255, 0.65);
         gap: 2px;
+      }
+
+      .site-footer {
+        position: relative;
+        z-index: 1;
+        padding: 8px 20px 28px;
+        margin-top: auto;
+      }
+
+      .site-footer__inner {
+        width: min(1180px, 100%);
+        margin: 0 auto;
+        text-align: center;
+        font-size: 0.75rem;
+        line-height: 1.5;
+        color: var(--muted);
+      }
+
+      .site-footer a {
+        color: inherit;
+        font-weight: 600;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+      }
+
+      .site-footer a:hover {
+        color: var(--ink);
+      }
+
+      .site-footer__credit {
+        margin: 0;
       }
 
       .lang-switch__btn {
@@ -1323,6 +1355,12 @@
         .field-tip {
           padding-inline: 4px;
         }
+
+        .site-footer {
+          padding-left: max(14px, env(safe-area-inset-left));
+          padding-right: max(14px, env(safe-area-inset-right));
+          padding-bottom: max(20px, env(safe-area-inset-bottom));
+        }
       }
 
       @media (max-width: 380px) {
@@ -1641,19 +1679,12 @@
                 <div class="source-strip">
                   <p class="markdown-note">
                     <span class="i18n-zh-only">
-                      Powered by <code>lunisolar</code>。当前计算聚焦四柱、日主、五行权重与基础结构，高级命理解读仍建议人工复核。
+                      计算参考：<a href="https://github.com/cantian-ai/bazi-mcp" target="_blank" rel="noreferrer">Cantian AI bazi-mcp</a>
                     </span>
                     <span class="i18n-en-only">
-                      Powered by <code>lunisolar</code>. This tool focuses on pillars, day master, element weights, and base
-                      structure; advanced interpretation should still be reviewed.
+                      Calculation reference:
+                      <a href="https://github.com/cantian-ai/bazi-mcp" target="_blank" rel="noreferrer">Cantian AI bazi-mcp</a>
                     </span>
-                  </p>
-                  <p class="markdown-note">
-                    <a href="https://github.com/cantian-ai/bazi-mcp" target="_blank" rel="noreferrer">bazi-mcp</a>
-                    ·
-                    <a href="https://github.com/waterbeside/lunisolar" target="_blank" rel="noreferrer">lunisolar</a>
-                    ·
-                    <a href="https://github.com/6tail/lunar-javascript" target="_blank" rel="noreferrer">lunar-javascript</a>
                   </p>
                 </div>
               </div>
@@ -1663,6 +1694,19 @@
         </div>
       </div>
     </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <div class="site-footer__inner">
+        <p class="site-footer__credit">
+          <span class="i18n-zh-only">
+            作者：<a href="https://github.com/Douglasymlai" target="_blank" rel="noreferrer">Douglas</a>
+          </span>
+          <span class="i18n-en-only">
+            By <a href="https://github.com/Douglasymlai" target="_blank" rel="noreferrer">Douglas</a>
+          </span>
+        </p>
+      </div>
+    </footer>
 
     <script src="https://unpkg.com/lunisolar@2.1.12/dist/lunisolar.js"></script>
     <script>
@@ -1713,6 +1757,7 @@
       const ELEMENT_ORDER = ["木", "火", "土", "金", "水"];
 
       const LANG_STORAGE_KEY = "bazi-md-ui-lang";
+      const BAZI_REFERENCE_TIMEZONE = "Asia/Shanghai";
 
       function getUiLang() {
         return document.documentElement.getAttribute("data-ui-lang") === "en" ? "en" : "zh-CN";
@@ -1782,6 +1827,76 @@
 
       function pad2(value) {
         return String(value).padStart(2, "0");
+      }
+
+      function getTimeZoneFormatter(timeZone) {
+        return new Intl.DateTimeFormat("en-CA", {
+          timeZone,
+          hourCycle: "h23",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit"
+        });
+      }
+
+      function getDatePartsInTimeZone(date, timeZone) {
+        const parts = {};
+        getTimeZoneFormatter(timeZone).formatToParts(date).forEach((part) => {
+          if (part.type !== "literal") {
+            parts[part.type] = part.value;
+          }
+        });
+        return {
+          year: Number(parts.year),
+          month: Number(parts.month),
+          day: Number(parts.day),
+          hour: Number(parts.hour),
+          minute: Number(parts.minute),
+          second: Number(parts.second)
+        };
+      }
+
+      function getTimeZoneOffsetMinutes(timeZone, date) {
+        const zonedParts = getDatePartsInTimeZone(date, timeZone);
+        const zonedUtcTime = Date.UTC(
+          zonedParts.year,
+          zonedParts.month - 1,
+          zonedParts.day,
+          zonedParts.hour,
+          zonedParts.minute,
+          zonedParts.second
+        );
+        return Math.round((zonedUtcTime - date.getTime()) / 60000);
+      }
+
+      function zonedDateTimeToUtcDate(parts, timeZone) {
+        const requestedUtcTime = Date.UTC(
+          Number(parts.year),
+          Number(parts.month) - 1,
+          Number(parts.day),
+          Number(parts.hour),
+          Number(parts.minute),
+          0
+        );
+
+        let offset = getTimeZoneOffsetMinutes(timeZone, new Date(requestedUtcTime));
+        let utcTime = requestedUtcTime - offset * 60 * 1000;
+        const adjustedOffset = getTimeZoneOffsetMinutes(timeZone, new Date(utcTime));
+
+        if (adjustedOffset !== offset) {
+          offset = adjustedOffset;
+          utcTime = requestedUtcTime - offset * 60 * 1000;
+        }
+
+        return new Date(utcTime);
+      }
+
+      function formatDateTimeInTimeZone(date, timeZone) {
+        const parts = getDatePartsInTimeZone(date, timeZone);
+        return `${parts.year}-${pad2(parts.month)}-${pad2(parts.day)} ${pad2(parts.hour)}:${pad2(parts.minute)}`;
       }
 
       function renderKeyboard() {
@@ -2262,7 +2377,9 @@ pillar_derivation: "auto-from-created-at"
           const defaultLanguage = document.getElementById("defaultLanguage").value;
           const agentType = "general";
           const createdAt = `${parsed.year}-${parsed.month}-${parsed.day}T${parsed.hour}:${parsed.minute}:00`;
-          const parseString = `${parsed.year}-${parsed.month}-${parsed.day} ${parsed.hour}:${parsed.minute}`;
+          // Match bazi-mcp: interpret the selected timezone as an instant, then derive pillars in +08:00.
+          const inputInstant = zonedDateTimeToUtcDate(parsed, timezone);
+          const parseString = formatDateTimeInTimeZone(inputInstant, BAZI_REFERENCE_TIMEZONE);
           const ls = window.lunisolar(parseString);
           const char8 = ls.char8;
 

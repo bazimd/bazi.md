@@ -1,8 +1,4 @@
-<div align="center">
-
-#### BAZI.md
-
-</div>
+# BAZI.md
 
 一个面向 AI Agent 的开源标准：用 `BAZI.md` 定义稳定体质，用 `AGENTS.md` 定义仓库执行规则。  
 An open-source standard for AI agents: use `BAZI.md` for stable constitution, and `AGENTS.md` for repository execution rules.

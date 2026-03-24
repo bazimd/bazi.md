@@ -113,3 +113,7 @@ The `skills/` subtree is separately licensed under the Apache License 2.0.
 
 如果文件同时受两个范围影响，以离文件最近的 `LICENSE` 为准。  
 If a file is covered by multiple scopes, the nearest `LICENSE` file takes precedence.
+
+## Note
+
+This is a fun project made to laugh with the moment we're in: an era where AI agents are supposedly reshaping human work. Or maybe just reshaping the way we talk about it.

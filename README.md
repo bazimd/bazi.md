@@ -1,6 +1,6 @@
 # BAZI.md
 
-![BAZI.md web demo](./assets/readme-hero.png)
+![BAZI.md web demo](https://bazimd.github.io/bazi.md/assets/readme-hero.png)
 
 一个面向 AI Agent 的开源标准：用 `BAZI.md` 定义稳定体质，用 `AGENTS.md` 定义仓库执行规则。  
 An open-source standard for AI agents: use `BAZI.md` for stable constitution, and `AGENTS.md` for repository execution rules.
@@ -8,7 +8,7 @@ An open-source standard for AI agents: use `BAZI.md` for stable constitution, an
 `BAZI.md` 以八字语言为灵感，但输出的是可执行、可迁移、可校验的 agent profile。  
 `BAZI.md` is inspired by Bazi language, but the output is an operational, portable, and validatable agent profile.
 
-
+![BAZI.md web demo](https://bazimd.github.io/bazi.md/assets/readme-hero2.png)
 
 - Demo: [bazimd.github.io/bazi.md](https://bazimd.github.io/bazi.md/)
 - Spec: [SPEC.md](SPEC.md)

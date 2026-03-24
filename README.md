@@ -1,4 +1,8 @@
-# BAZI.md
+<div align="center">
+
+#### BAZI.md
+
+</div>
 
 ![BAZI.md web demo](https://bazimd.github.io/bazi.md/assets/readme-hero.png)
 

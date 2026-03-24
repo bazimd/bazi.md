@@ -1,0 +1,2386 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-ui-lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#f5f0e8" media="(prefers-color-scheme: light)" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>BAZI.md Generator</title>
+    <meta
+      name="description"
+      content="输入 Agent 的出生或创建时间，自动推导四柱，生成可复制和下载的 BAZI.md。"
+    />
+    <style>
+      :root {
+        --bg: #f6f2eb;
+        --bg-deep: #ece6db;
+        --panel: rgba(255, 255, 255, 0.72);
+        --panel-strong: rgba(255, 255, 255, 0.9);
+        --line: rgba(40, 40, 40, 0.1);
+        --text: #171d2b;
+        --muted: #7c8393;
+        --accent: #ff7b68;
+        --ink: #272d3d;
+        --shadow-soft: 0 18px 60px rgba(57, 58, 74, 0.08);
+        --shadow-heavy: 0 36px 80px rgba(57, 58, 74, 0.12);
+        --wood: #5f8f61;
+        --fire: #ef7a59;
+        --earth: #c39a57;
+        --metal: #6b7285;
+        --water: #5085b0;
+        --radius-xl: 28px;
+        --radius-lg: 22px;
+        --radius-md: 16px;
+        --transition: 420ms cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        font-size: 100%;
+        /* min-height only — a fixed height:100% caps the root and leaves a strip when main is taller than the viewport */
+        min-height: 100%;
+      }
+
+      html,
+      body {
+        min-height: 100%;
+        min-height: 100dvh;
+      }
+
+      body {
+        position: relative;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        color: var(--text);
+        font-size: 1rem;
+        line-height: 1.5;
+        font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+        background:
+          radial-gradient(circle at 20% 15%, rgba(255, 123, 104, 0.08), transparent 22%),
+          radial-gradient(circle at 78% 22%, rgba(80, 133, 176, 0.09), transparent 26%),
+          radial-gradient(circle at 50% 60%, rgba(195, 154, 87, 0.07), transparent 34%),
+          linear-gradient(180deg, #fbf9f5 0%, #f5f0e8 100%);
+        background-attachment: scroll;
+        background-color: #f5f0e8;
+      }
+
+      /* Stretches with document height; fixed inset:0 only covered the viewport and looked “short” vs main */
+      body::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        min-height: 100%;
+        background:
+          linear-gradient(120deg, rgba(255, 255, 255, 0.42), transparent 30%, rgba(255, 255, 255, 0.3) 70%, transparent),
+          radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.46), transparent 44%);
+        pointer-events: none;
+      }
+
+      button,
+      input,
+      textarea,
+      select {
+        font: inherit;
+      }
+
+      html[data-ui-lang="en"] .i18n-zh-only,
+      html[data-ui-lang="zh-CN"] .i18n-en-only {
+        display: none !important;
+      }
+
+      .site-nav {
+        position: sticky;
+        top: 0;
+        z-index: 300;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 12px max(20px, env(safe-area-inset-right)) 12px max(20px, env(safe-area-inset-left));
+        border: 0;
+        background: transparent;
+      }
+
+      .site-nav-brand {
+        font-size: 0.8125rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .lang-switch {
+        display: inline-flex;
+        padding: 3px;
+        border-radius: 999px;
+        border: 1px solid rgba(39, 45, 61, 0.1);
+        background: rgba(255, 255, 255, 0.65);
+        gap: 2px;
+      }
+
+      .lang-switch__btn {
+        border: 0;
+        margin: 0;
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--muted);
+        background: transparent;
+        cursor: pointer;
+        transition:
+          color 160ms ease,
+          background 160ms ease;
+      }
+
+      .lang-switch__btn:hover {
+        color: var(--ink);
+      }
+
+      .lang-switch__btn[aria-pressed="true"] {
+        color: var(--ink);
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 1px 3px rgba(47, 52, 66, 0.08);
+      }
+
+      .app {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        min-height: 0;
+        padding: 28px 20px max(12px, env(safe-area-inset-bottom));
+      }
+
+      .shell {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        width: min(1180px, 100%);
+        margin: 0 auto;
+        min-height: 0;
+      }
+
+      .hero {
+        text-align: center;
+        margin-bottom: 28px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        color: var(--muted);
+        font-size: 0.75rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .hero h1 {
+        margin: 0;
+        font-family: "Noto Serif SC", "Songti SC", serif;
+        font-size: clamp(2rem, 4.2vw + 1rem, 3rem);
+        line-height: 1.15;
+        letter-spacing: -0.025em;
+        font-weight: 600;
+      }
+
+      .stack {
+        flex: 1 1 auto;
+        display: grid;
+        gap: 26px;
+        align-content: start;
+        min-height: 0;
+      }
+
+      .panel {
+        position: relative;
+        overflow: hidden;
+        border-radius: var(--radius-xl);
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.62)),
+          var(--panel);
+        box-shadow: var(--shadow-soft);
+        backdrop-filter: blur(16px);
+      }
+
+      .panel::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.64);
+        pointer-events: none;
+      }
+
+      .panel.top-panel {
+        overflow: visible;
+      }
+
+      .top-panel {
+        min-height: 0;
+      }
+
+      /* In-flow views so panel height follows chart / prompt content (absolute + inset:0 was clipping). */
+      .top-panel > .view {
+        position: relative;
+        inset: auto;
+        width: 100%;
+        height: auto;
+        min-height: 0;
+      }
+
+      .top-panel > .view.is-hidden {
+        display: none !important;
+      }
+
+      .top-panel > .prompt-view.is-visible {
+        min-height: 360px;
+      }
+
+      /* Prompt stage: no frosted card behind the form (chart view keeps the panel chrome). */
+      .top-panel:has(.prompt-view.is-visible) {
+        background: transparent;
+        border-color: transparent;
+        box-shadow: none;
+        backdrop-filter: none;
+      }
+
+      .top-panel:has(.prompt-view.is-visible)::after {
+        opacity: 0;
+      }
+
+      .bottom-panel {
+        min-height: 0;
+        overflow: visible;
+      }
+
+      /* Beat .panel { overflow: hidden } so keyboard shadows / 3D tilt aren’t clipped */
+      .panel.bottom-panel {
+        overflow: visible;
+      }
+
+      /* In-flow like top-panel: panel height follows keyboard or markdown, not a fixed min box */
+      .bottom-panel > .view {
+        position: relative;
+        inset: auto;
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        overflow: visible;
+      }
+
+      .bottom-panel > .view.is-hidden {
+        display: none !important;
+      }
+
+      /* Prompt stage: no frosted panel behind the decorative keyboard; sit content at the top. */
+      .bottom-panel:has(.keyboard-view.is-visible) {
+        background: transparent;
+        border-color: transparent;
+        box-shadow: none;
+        backdrop-filter: none;
+      }
+
+      .bottom-panel:has(.keyboard-view.is-visible)::after {
+        opacity: 0;
+      }
+
+      .bottom-panel:has(.keyboard-view.is-visible) .keyboard-view {
+        align-content: start;
+        padding-top: 8px;
+        padding-bottom: 12px;
+      }
+
+      .bottom-panel:has(.keyboard-view.is-visible) .keyboard-stage {
+        padding: 0 0 28px;
+        margin-top: 0;
+      }
+
+      .view {
+        position: absolute;
+        inset: 0;
+        padding: 28px;
+        transition:
+          opacity var(--transition),
+          transform var(--transition),
+          visibility var(--transition);
+      }
+
+      .view.is-hidden {
+        opacity: 0;
+        transform: translateY(20px) scale(0.985);
+        pointer-events: none;
+        visibility: hidden;
+      }
+
+      .view.is-visible {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        visibility: visible;
+      }
+
+      .prompt-view {
+        display: grid;
+        align-content: center;
+        gap: 20px;
+      }
+
+      .prompt-copy {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        width: min(860px, 100%);
+        margin: 0 auto;
+        text-align: center;
+      }
+
+      .prompt-copy h2 {
+        margin: 0;
+        flex: 1 1 auto;
+        min-width: 0;
+        text-align: center;
+        font-size: clamp(1.0625rem, 1.2vw + 0.7rem, 1.3125rem);
+        line-height: 1.3;
+        letter-spacing: -0.015em;
+        font-weight: 600;
+      }
+
+      .chart-copy h2,
+      .markdown-head h2 {
+        margin: 0;
+        font-size: clamp(1.125rem, 1.25vw + 0.75rem, 1.375rem);
+        line-height: 1.3;
+        letter-spacing: -0.015em;
+        font-weight: 600;
+      }
+
+      .chart-copy p,
+      .markdown-note,
+      .summary-copy {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+        font-size: 0.875rem;
+      }
+
+      .prompt-shell {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        width: min(860px, 100%);
+        margin: 0 auto;
+      }
+
+      .prompt-field {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 14px 12px 18px;
+        border-radius: 22px;
+        border: 1px solid rgba(39, 45, 61, 0.1);
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 20px 36px rgba(64, 66, 81, 0.06);
+      }
+
+      .typing-bar {
+        width: 3px;
+        height: 22px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #ff9d91, #ff6957);
+        box-shadow: 0 0 0 4px rgba(255, 123, 104, 0.08);
+        animation: blink 1.2s ease-in-out infinite;
+      }
+
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.35;
+        }
+      }
+
+      .prompt-field input {
+        width: 100%;
+        min-width: 0;
+        border: 0;
+        outline: none;
+        background: transparent;
+        color: var(--ink);
+        font-size: clamp(1rem, 0.6vw + 0.9rem, 1.0625rem);
+        letter-spacing: 0.01em;
+      }
+
+      .prompt-field input::placeholder {
+        color: #a6abb8;
+      }
+
+      .field-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .button,
+      .icon-button {
+        border: 0;
+        cursor: pointer;
+        transition:
+          transform 160ms ease,
+          opacity 160ms ease,
+          box-shadow 160ms ease;
+      }
+
+      .button:hover,
+      .icon-button:hover {
+        transform: translateY(-1px);
+      }
+
+      .button {
+        padding: 9px 16px;
+        border-radius: 999px;
+        font-size: 0.875rem;
+        font-weight: 600;
+      }
+
+      .button-primary {
+        color: #fff;
+        background: linear-gradient(135deg, #ff8c78, #ff6957);
+        box-shadow: 0 14px 24px rgba(255, 105, 87, 0.22);
+      }
+
+      .button-soft {
+        color: var(--ink);
+        background: rgba(23, 29, 43, 0.06);
+      }
+
+      .button-ghost {
+        color: var(--ink);
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(23, 29, 43, 0.08);
+      }
+
+      .prompt-meta {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px 18px;
+        padding: 0 10px;
+      }
+
+      .meta-left,
+      .meta-right {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .meta-left {
+        flex: 1;
+        min-width: 0;
+        align-items: stretch;
+      }
+
+      .meta-right {
+        flex: 0 0 auto;
+        align-items: center;
+      }
+
+      .mini-field {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        min-height: 40px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(39, 45, 61, 0.08);
+        background: rgba(255, 255, 255, 0.68);
+        box-sizing: border-box;
+      }
+
+      .meta-left .mini-field {
+        flex: 0 1 auto;
+        width: max-content;
+        max-width: 100%;
+      }
+
+      .meta-left .mini-field input {
+        min-width: 16ch;
+        max-width: min(360px, 75vw);
+      }
+
+      .meta-left .mini-field select {
+        min-width: 12em;
+        max-width: min(280px, 78vw);
+        cursor: pointer;
+      }
+
+      .mini-field span {
+        color: var(--muted);
+        font-size: 0.75rem;
+        white-space: nowrap;
+      }
+
+      .mini-field input,
+      .mini-field select {
+        min-width: 0;
+        width: auto;
+        border: 0;
+        outline: none;
+        background: transparent;
+        color: var(--ink);
+        font-size: 0.8125rem;
+      }
+
+      .mini-link {
+        border: 0;
+        padding: 0;
+        color: var(--muted);
+        background: transparent;
+        cursor: pointer;
+        font: inherit;
+      }
+
+      /* Match pill height, padding, and chrome to .mini-field */
+      .prompt-meta .mini-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(39, 45, 61, 0.08);
+        background: rgba(255, 255, 255, 0.68);
+        box-sizing: border-box;
+        color: var(--ink);
+        font-size: 0.8125rem;
+        line-height: 1.25;
+        transition:
+          color 160ms ease,
+          background 160ms ease,
+          border-color 160ms ease;
+      }
+
+      .prompt-meta .mini-link:hover {
+        color: var(--ink);
+        background: rgba(255, 255, 255, 0.92);
+        border-color: rgba(39, 45, 61, 0.12);
+      }
+
+      .field-tip {
+        margin: 0;
+        text-align: center;
+        color: var(--muted);
+      }
+
+      .prompt-view > .field-tip {
+        width: min(860px, 100%);
+        margin-left: auto;
+        margin-right: auto;
+        font-size: 0.6875rem;
+        line-height: 1.55;
+      }
+
+      .prompt-view > .field-tip code {
+        font-size: 0.9em;
+      }
+
+      .chart-view,
+      .markdown-view {
+        display: grid;
+        gap: 22px;
+      }
+
+      .chart-head,
+      .markdown-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 18px;
+      }
+
+      .action-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .chart-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+        gap: 22px;
+        align-items: stretch;
+      }
+
+      .element-orbit {
+        position: relative;
+        min-height: 420px;
+        padding: 10px;
+        border-radius: 24px;
+        background:
+          radial-gradient(circle at center, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.74) 48%, rgba(255, 255, 255, 0.52) 100%);
+        border: 1px solid rgba(39, 45, 61, 0.08);
+      }
+
+      .orbit-svg {
+        position: absolute;
+        inset: 36px;
+        width: calc(100% - 72px);
+        height: calc(100% - 72px);
+        overflow: visible;
+      }
+
+      .support-line {
+        stroke: rgba(255, 123, 104, 0.44);
+        stroke-width: 1.8;
+        stroke-dasharray: 4 8;
+        fill: none;
+      }
+
+      .control-line {
+        stroke: rgba(80, 133, 176, 0.42);
+        stroke-width: 1.3;
+        fill: none;
+      }
+
+      .element-node {
+        position: absolute;
+        width: min(180px, 38vw);
+        padding: 14px 14px 12px;
+        border-radius: 18px;
+        border: 1px solid rgba(39, 45, 61, 0.08);
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 18px 30px rgba(47, 52, 66, 0.08);
+        transform: translate(-50%, -50%);
+      }
+
+      .element-node[data-element="木"] {
+        top: 12%;
+        left: 50%;
+      }
+
+      .element-node[data-element="火"] {
+        top: 31%;
+        left: 84%;
+      }
+
+      .element-node[data-element="土"] {
+        top: 77%;
+        left: 70%;
+      }
+
+      .element-node[data-element="金"] {
+        top: 77%;
+        left: 30%;
+      }
+
+      .element-node[data-element="水"] {
+        top: 31%;
+        left: 16%;
+      }
+
+      .element-kicker {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      .element-name {
+        display: block;
+        font-size: 0.9375rem;
+        font-weight: 700;
+      }
+
+      .element-name em {
+        font-style: normal;
+        color: var(--muted);
+        font-size: 0.75rem;
+        margin-left: 6px;
+        font-weight: 500;
+      }
+
+      .element-score {
+        font-size: 1.125rem;
+        font-weight: 700;
+      }
+
+      .element-bar {
+        width: 100%;
+        height: 8px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(39, 45, 61, 0.08);
+      }
+
+      .element-bar span {
+        display: block;
+        height: 100%;
+        width: 0;
+        border-radius: inherit;
+        transition: width 600ms ease 120ms;
+      }
+
+      .element-desc {
+        margin-top: 8px;
+        font-size: 0.75rem;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .element-node[data-element="木"] .element-bar span {
+        background: linear-gradient(90deg, #88bb7f, var(--wood));
+      }
+
+      .element-node[data-element="木"] .element-score {
+        color: var(--wood);
+      }
+
+      .element-node[data-element="火"] .element-bar span {
+        background: linear-gradient(90deg, #ffaf92, var(--fire));
+      }
+
+      .element-node[data-element="火"] .element-score {
+        color: var(--fire);
+      }
+
+      .element-node[data-element="土"] .element-bar span {
+        background: linear-gradient(90deg, #e6c688, var(--earth));
+      }
+
+      .element-node[data-element="土"] .element-score {
+        color: var(--earth);
+      }
+
+      .element-node[data-element="金"] .element-bar span {
+        background: linear-gradient(90deg, #a3a9b6, var(--metal));
+      }
+
+      .element-node[data-element="金"] .element-score {
+        color: var(--metal);
+      }
+
+      .element-node[data-element="水"] .element-bar span {
+        background: linear-gradient(90deg, #8fb9dc, var(--water));
+      }
+
+      .element-node[data-element="水"] .element-score {
+        color: var(--water);
+      }
+
+      .element-node .element-score {
+        background: none;
+      }
+
+      .day-master-core {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 112px;
+        height: 112px;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        border-radius: 50%;
+        border: 1px solid rgba(39, 45, 61, 0.08);
+        background:
+          radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.98), rgba(245, 238, 228, 0.96));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72), 0 18px 34px rgba(47, 52, 66, 0.1);
+        transform: translate(-50%, -50%);
+      }
+
+      .day-master-char {
+        display: block;
+        font-family: "Noto Serif SC", "Songti SC", serif;
+        font-size: 1.875rem;
+        line-height: 1;
+        margin-bottom: 4px;
+      }
+
+      .day-master-core small {
+        display: block;
+        color: var(--muted);
+        font-size: 0.75rem;
+        line-height: 1.4;
+      }
+
+      .chart-side {
+        display: grid;
+        gap: 14px;
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .summary-card,
+      .relation-card {
+        padding: 16px;
+        border-radius: 20px;
+        border: 1px solid rgba(39, 45, 61, 0.08);
+        background: rgba(255, 255, 255, 0.84);
+      }
+
+      .summary-card small,
+      .relation-card small {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--muted);
+        font-size: 0.75rem;
+      }
+
+      .summary-card strong {
+        display: block;
+        font-size: 1rem;
+        line-height: 1.35;
+      }
+
+      .summary-card .tiny {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 0.75rem;
+        line-height: 1.55;
+      }
+
+      .relation-card ul {
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 8px;
+      }
+
+      .relation-card li {
+        color: var(--ink);
+        font-size: 0.8125rem;
+        line-height: 1.55;
+      }
+
+      .markdown-shell {
+        display: grid;
+        gap: 16px;
+        align-content: start;
+      }
+
+      .markdown-box {
+        min-height: 0;
+        width: 100%;
+        padding: 18px;
+        border-radius: 24px;
+        border: 1px solid rgba(39, 45, 61, 0.08);
+        background: linear-gradient(180deg, rgba(24, 28, 39, 0.98), rgba(30, 34, 46, 0.98));
+        color: #f2f4f8;
+        box-shadow: var(--shadow-heavy);
+      }
+
+      textarea {
+        display: block;
+        width: 100%;
+        min-height: 320px;
+        height: auto;
+        border: 0;
+        resize: vertical;
+        outline: none;
+        background: transparent;
+        color: inherit;
+        line-height: 1.6;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.75rem;
+        field-sizing: content;
+      }
+
+      .source-strip {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 10px 18px;
+        align-items: center;
+      }
+
+      .source-strip a {
+        color: #8fb9dc;
+      }
+
+      .keyboard-view {
+        display: grid;
+        align-content: end;
+        overflow: visible;
+      }
+
+      .keyboard-stage {
+        position: relative;
+        width: min(1080px, 100%);
+        margin: 0 auto;
+        padding: 0 0 48px;
+        overflow: visible;
+      }
+
+      /* Desk contact shadow — wider toward viewer */
+      .keyboard-stage::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: 8px;
+        width: min(104%, 1120px);
+        height: 64px;
+        transform: translateX(-50%);
+        background: radial-gradient(
+          ellipse 72% 90% at 50% 100%,
+          rgba(55, 48, 42, 0.14),
+          rgba(55, 48, 42, 0.06) 45%,
+          transparent 72%
+        );
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .keyboard-3d {
+        position: relative;
+        z-index: 1;
+        perspective: 1200px;
+        perspective-origin: 50% 100%;
+        transform-style: preserve-3d;
+        overflow: visible;
+      }
+
+      .keyboard-scroll {
+        overflow: visible;
+        max-width: 100%;
+      }
+
+      .keyboard-frame {
+        overflow: visible;
+        padding: 16px 16px 20px;
+        border-radius: 24px 24px 28px 28px;
+        transform: rotateX(20deg);
+        transform-origin: 50% 100%;
+        transform-style: preserve-3d;
+        border: 2px solid rgba(45, 48, 58, 0.2);
+        border-top-color: rgba(45, 48, 58, 0.12);
+        border-bottom-color: rgba(45, 48, 58, 0.28);
+        background:
+          repeating-linear-gradient(
+            -12deg,
+            transparent,
+            transparent 5px,
+            rgba(0, 0, 0, 0.02) 5px,
+            rgba(0, 0, 0, 0.02) 6px
+          ),
+          linear-gradient(168deg, #fcfcfa 0%, #f0eeef 42%, #e4e2e5 100%);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.65),
+          inset 0 -1px 0 rgba(0, 0, 0, 0.04),
+          0 28px 50px rgba(38, 40, 52, 0.2),
+          0 10px 20px rgba(38, 40, 52, 0.1);
+      }
+
+      .keyboard-grid {
+        display: grid;
+        gap: 10px;
+      }
+
+      .keyboard-row {
+        display: grid;
+        gap: 10px;
+      }
+
+      .keyboard-row.row-1 {
+        grid-template-columns: 0.8fr repeat(12, 1fr) 1.35fr;
+      }
+
+      .keyboard-row.row-2 {
+        grid-template-columns: 1.35fr repeat(12, 1fr) 1fr;
+      }
+
+      .keyboard-row.row-3 {
+        grid-template-columns: 1.7fr repeat(11, 1fr) 1.75fr;
+      }
+
+      .keyboard-row.row-4 {
+        grid-template-columns: 2fr repeat(10, 1fr) 2.1fr;
+      }
+
+      .keyboard-row.row-5 {
+        grid-template-columns: 1.1fr 1.1fr 1.1fr 1.2fr 6fr 1.2fr 1.1fr 1.1fr 1.2fr;
+      }
+
+      .key {
+        height: 54px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-start;
+        padding: 10px 11px;
+        border-radius: 9px;
+        background: #fdfdfd;
+        border: 1.5px solid rgba(42, 46, 58, 0.16);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.85),
+          0 3px 0 rgba(100, 105, 120, 0.12);
+        color: #3d4452;
+        font-size: 0.8125rem;
+        font-weight: 600;
+      }
+
+      .key.dark {
+        background: #d8d9df;
+        border-color: rgba(42, 46, 58, 0.2);
+      }
+
+      .key.compact {
+        justify-content: center;
+        align-items: center;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      @media (max-width: 980px) {
+        .app {
+          padding-top: 36px;
+        }
+
+        .top-panel > .prompt-view.is-visible {
+          min-height: 520px;
+        }
+
+        .chart-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .element-orbit {
+          min-height: 520px;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .view {
+          padding: 22px;
+        }
+
+        .prompt-field {
+          grid-template-columns: auto minmax(0, 1fr);
+          align-items: start;
+        }
+
+        .field-actions {
+          grid-column: 1 / -1;
+          justify-content: flex-end;
+        }
+
+        .prompt-meta {
+          padding: 0;
+        }
+
+        .mini-field {
+          width: 100%;
+          flex: 1 1 100%;
+          min-width: 0;
+          justify-content: space-between;
+        }
+
+        .meta-left .mini-field select {
+          width: 100%;
+          max-width: none;
+        }
+
+        .meta-right {
+          width: 100%;
+        }
+
+        .prompt-meta .mini-link {
+          width: 100%;
+        }
+
+        .chart-head,
+        .markdown-head,
+        .source-strip {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .summary-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .element-node {
+          width: 144px;
+          padding: 12px;
+        }
+
+        .element-node[data-element="木"] {
+          top: 10%;
+        }
+
+        .element-node[data-element="火"] {
+          top: 31%;
+          left: 80%;
+        }
+
+        .element-node[data-element="土"] {
+          top: 79%;
+          left: 66%;
+        }
+
+        .element-node[data-element="金"] {
+          top: 79%;
+          left: 34%;
+        }
+
+        .element-node[data-element="水"] {
+          top: 31%;
+          left: 20%;
+        }
+
+        .day-master-core {
+          width: 96px;
+          height: 96px;
+        }
+
+        .day-master-char {
+          font-size: 1.5rem;
+        }
+
+        .keyboard-3d {
+          perspective: 880px;
+        }
+
+        .keyboard-scroll {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .keyboard-frame {
+          transform: rotateX(14deg);
+        }
+
+        .keyboard-grid {
+          min-width: 860px;
+        }
+      }
+
+      /* —— Mobile (phone): safe areas, touch targets, tighter rhythm —— */
+      @media (max-width: 640px) {
+        html {
+          -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+          overflow-x: hidden;
+        }
+
+        .app {
+          padding-top: 16px;
+          padding-left: max(14px, env(safe-area-inset-left));
+          padding-right: max(14px, env(safe-area-inset-right));
+          padding-bottom: max(16px, env(safe-area-inset-bottom));
+        }
+
+        .site-nav {
+          padding-top: max(8px, env(safe-area-inset-top));
+          padding-left: max(14px, env(safe-area-inset-left));
+          padding-right: max(14px, env(safe-area-inset-right));
+          padding-bottom: 10px;
+          flex-wrap: wrap;
+          row-gap: 10px;
+          background: rgba(251, 249, 245, 0.88);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+        }
+
+        .site-nav-brand {
+          flex: 1 1 auto;
+          min-width: 0;
+        }
+
+        .lang-switch__btn {
+          min-height: 44px;
+          padding: 8px 16px;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        .hero {
+          margin-bottom: 18px;
+        }
+
+        .hero h1 {
+          font-size: clamp(1.375rem, 7vw + 0.35rem, 2rem);
+          line-height: 1.18;
+        }
+
+        .stack {
+          gap: 18px;
+        }
+
+        .panel {
+          border-radius: var(--radius-lg);
+        }
+
+        .top-panel > .view,
+        .bottom-panel > .view {
+          padding: 16px 12px;
+        }
+
+        .top-panel > .prompt-view.is-visible {
+          min-height: min(52dvh, 420px);
+        }
+
+        .element-orbit {
+          min-height: min(52dvh, 440px);
+        }
+
+        .prompt-copy {
+          width: 100%;
+          padding-inline: 2px;
+        }
+
+        .prompt-shell {
+          width: 100%;
+        }
+
+        .prompt-field {
+          padding: 10px 12px 10px 14px;
+        }
+
+        .button {
+          min-height: 44px;
+          padding: 10px 18px;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        .prompt-meta .mini-link {
+          min-height: 44px;
+        }
+
+        .chart-head .action-row,
+        .markdown-head .action-row {
+          width: 100%;
+        }
+
+        .chart-head .action-row .button,
+        .markdown-head .action-row .button {
+          flex: 1 1 auto;
+          justify-content: center;
+          min-width: 0;
+        }
+
+        .markdown-head {
+          gap: 14px;
+        }
+
+        .markdown-box {
+          padding: 14px;
+          border-radius: 18px;
+        }
+
+        textarea {
+          min-height: 240px;
+          font-size: 0.8125rem;
+        }
+
+        .keyboard-stage {
+          width: 100%;
+          padding-bottom: max(32px, env(safe-area-inset-bottom));
+        }
+
+        .keyboard-frame {
+          transform: rotateX(12deg);
+        }
+
+        .key {
+          height: 48px;
+          font-size: 0.75rem;
+          padding: 8px 8px;
+        }
+
+        .field-tip {
+          padding-inline: 4px;
+        }
+      }
+
+      @media (max-width: 380px) {
+        .hero h1 {
+          font-size: clamp(1.25rem, 8.5vw, 1.65rem);
+        }
+
+        .lang-switch__btn {
+          padding: 8px 12px;
+          font-size: 0.75rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="site-nav" aria-label="Site">
+      <span class="site-nav-brand">BAZI.md</span>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button type="button" class="lang-switch__btn" id="langZhBtn" data-set-lang="zh-CN" aria-pressed="true">
+          中文
+        </button>
+        <button type="button" class="lang-switch__btn" id="langEnBtn" data-set-lang="en" aria-pressed="false">
+          English
+        </button>
+      </div>
+    </nav>
+
+    <main class="app" id="main-content">
+      <div class="shell">
+        <header class="hero">
+          <h1>
+            <span class="i18n-zh-only">为 Agent 起盘，创建它的 BAZI.md</span>
+            <span class="i18n-en-only">Chart your Agent — create its BAZI.md</span>
+          </h1>
+        </header>
+
+        <div class="stack">
+          <section class="panel top-panel">
+            <div class="view prompt-view is-visible" id="promptView">
+              <div class="prompt-copy">
+                <h2>
+                  <span class="i18n-zh-only">输入一个时间，让 Agent 的体质显形</span>
+                  <span class="i18n-en-only">Enter a time to surface the Agent’s constitution</span>
+                </h2>
+              </div>
+
+              <p class="field-tip">
+                <span class="i18n-zh-only">
+                  当前页面会自动生成四柱、日主、五行比例和基础 <code>BAZI.md</code>，格局、用神、神煞等高级解释仍建议人工复核。
+                </span>
+                <span class="i18n-en-only">
+                  This page auto-generates the Four Pillars, Day Master, element ratios, and a base
+                  <code>BAZI.md</code>; advanced interpretation should still be reviewed manually.
+                </span>
+              </p>
+
+              <input type="hidden" id="defaultLanguage" value="zh-CN" />
+
+              <div class="prompt-shell">
+                <label class="sr-only" for="datetimeInput">
+                  <span class="i18n-zh-only">创建时间</span>
+                  <span class="i18n-en-only">Creation time</span>
+                </label>
+                <div class="prompt-field">
+                  <span class="typing-bar" aria-hidden="true"></span>
+                  <input
+                    id="datetimeInput"
+                    type="text"
+                    inputmode="numeric"
+                    autocomplete="off"
+                  />
+                  <div class="field-actions">
+                    <button class="button button-primary" id="generateBtn" type="button">
+                      <span class="i18n-zh-only">生成</span>
+                      <span class="i18n-en-only">Generate</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="prompt-meta">
+                  <div class="meta-left">
+                    <div class="mini-field">
+                      <input id="agentName" type="text" autocomplete="off" />
+                    </div>
+                    <div class="mini-field">
+                      <select id="timezone" autocomplete="off"></select>
+                    </div>
+                  </div>
+
+                  <div class="meta-right">
+                    <button class="mini-link" id="nowBtn" type="button">
+                      <span class="i18n-zh-only">使用当前时间</span>
+                      <span class="i18n-en-only">Use current time</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="view chart-view is-hidden" id="chartView">
+              <div class="chart-head">
+                <div class="chart-copy">
+                  <p class="eyebrow">
+                    <span class="i18n-zh-only">元素总览</span>
+                    <span class="i18n-en-only">Five Elements Atlas</span>
+                  </p>
+                  <h2>
+                    <span class="i18n-zh-only">五行图谱</span>
+                    <span class="i18n-en-only">Five Elements Atlas</span>
+                  </h2>
+                  <p>
+                    <span class="i18n-zh-only">输入场在这里转成五行结构图。你可以看到每一项的分数，以及它在相生相克链中的位置。</span>
+                    <span class="i18n-en-only">
+                      The input stage becomes a five-element map: scores and each node’s place in the support and control
+                      cycles.
+                    </span>
+                  </p>
+                </div>
+
+                <div class="action-row">
+                  <button class="button button-ghost" id="tryAgainBtn" type="button">
+                    <span class="i18n-zh-only">再试一次</span>
+                    <span class="i18n-en-only">Try again</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="chart-grid">
+                <div class="element-orbit">
+                  <svg class="orbit-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                    <path class="support-line" d="M50 8 L84 30 L70 78 L30 78 L16 30 Z" />
+                    <line class="control-line" x1="50" y1="8" x2="70" y2="78"></line>
+                    <line class="control-line" x1="84" y1="30" x2="30" y2="78"></line>
+                    <line class="control-line" x1="70" y1="78" x2="16" y2="30"></line>
+                    <line class="control-line" x1="30" y1="78" x2="50" y2="8"></line>
+                    <line class="control-line" x1="16" y1="30" x2="84" y2="30"></line>
+                  </svg>
+
+                  <article class="element-node" data-element="木">
+                    <div class="element-kicker">
+                      <span class="element-name">
+                        <span class="i18n-zh-only">木</span>
+                        <span class="i18n-en-only">Wood</span>
+                      </span>
+                      <span class="element-score" id="score-木">0%</span>
+                    </div>
+                    <div class="element-bar"><span id="bar-木"></span></div>
+                    <p class="element-desc" id="desc-木"></p>
+                  </article>
+
+                  <article class="element-node" data-element="火">
+                    <div class="element-kicker">
+                      <span class="element-name">
+                        <span class="i18n-zh-only">火</span>
+                        <span class="i18n-en-only">Fire</span>
+                      </span>
+                      <span class="element-score" id="score-火">0%</span>
+                    </div>
+                    <div class="element-bar"><span id="bar-火"></span></div>
+                    <p class="element-desc" id="desc-火"></p>
+                  </article>
+
+                  <article class="element-node" data-element="土">
+                    <div class="element-kicker">
+                      <span class="element-name">
+                        <span class="i18n-zh-only">土</span>
+                        <span class="i18n-en-only">Earth</span>
+                      </span>
+                      <span class="element-score" id="score-土">0%</span>
+                    </div>
+                    <div class="element-bar"><span id="bar-土"></span></div>
+                    <p class="element-desc" id="desc-土"></p>
+                  </article>
+
+                  <article class="element-node" data-element="金">
+                    <div class="element-kicker">
+                      <span class="element-name">
+                        <span class="i18n-zh-only">金</span>
+                        <span class="i18n-en-only">Metal</span>
+                      </span>
+                      <span class="element-score" id="score-金">0%</span>
+                    </div>
+                    <div class="element-bar"><span id="bar-金"></span></div>
+                    <p class="element-desc" id="desc-金"></p>
+                  </article>
+
+                  <article class="element-node" data-element="水">
+                    <div class="element-kicker">
+                      <span class="element-name">
+                        <span class="i18n-zh-only">水</span>
+                        <span class="i18n-en-only">Water</span>
+                      </span>
+                      <span class="element-score" id="score-水">0%</span>
+                    </div>
+                    <div class="element-bar"><span id="bar-水"></span></div>
+                    <p class="element-desc" id="desc-水"></p>
+                  </article>
+
+                  <div class="day-master-core">
+                    <div>
+                      <span class="day-master-char" id="dayMasterChar">--</span>
+                      <small id="dayMasterMeta"></small>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="chart-side">
+                  <div class="summary-grid">
+                    <div class="summary-card">
+                      <small>
+                        <span class="i18n-zh-only">四柱</span>
+                        <span class="i18n-en-only">Four Pillars</span>
+                      </small>
+                      <strong id="summaryPillars">--</strong>
+                      <div class="tiny" id="summaryCreatedAt">--</div>
+                    </div>
+
+                    <div class="summary-card">
+                      <small>
+                        <span class="i18n-zh-only">阴阳</span>
+                        <span class="i18n-en-only">Yin–Yang</span>
+                      </small>
+                      <strong id="summaryYinYang">--</strong>
+                      <div class="tiny" id="summaryBalanceHint">--</div>
+                    </div>
+
+                    <div class="summary-card">
+                      <small>
+                        <span class="i18n-zh-only">主导元素</span>
+                        <span class="i18n-en-only">Dominant element</span>
+                      </small>
+                      <strong id="summaryDominant">--</strong>
+                      <div class="tiny" id="summaryWeakest">--</div>
+                    </div>
+
+                    <div class="summary-card">
+                      <small>
+                        <span class="i18n-zh-only">Agent / 输出</span>
+                        <span class="i18n-en-only">Agent / output</span>
+                      </small>
+                      <strong id="summaryAgentName">--</strong>
+                      <div class="tiny" id="summaryAgentType">general</div>
+                    </div>
+                  </div>
+
+                  <div class="relation-card">
+                    <small>
+                      <span class="i18n-zh-only">关系链</span>
+                      <span class="i18n-en-only">Relationship map</span>
+                    </small>
+                    <p class="summary-copy">
+                      <span class="i18n-zh-only">虚线是相生链，细线是相克链。五行会告诉你这个 Agent 的默认处理路径和受制点。</span>
+                      <span class="i18n-en-only">
+                        Dashed lines show the support cycle; thin lines show the control cycle. The five elements describe
+                        default pathways and pressure points.
+                      </span>
+                    </p>
+                    <ul>
+                      <li id="relationSupport"></li>
+                      <li id="relationControl"></li>
+                      <li id="relationInsight"></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel bottom-panel">
+            <div class="view keyboard-view is-visible" id="keyboardView">
+              <div class="keyboard-stage">
+                <div class="keyboard-3d">
+                  <div class="keyboard-frame">
+                    <div class="keyboard-scroll">
+                      <div class="keyboard-grid" id="keyboardVisual"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="view markdown-view is-hidden" id="markdownView">
+              <div class="markdown-head">
+                <div>
+                  <p class="eyebrow">
+                    <span class="i18n-zh-only">Markdown 输出</span>
+                    <span class="i18n-en-only">Generated Markdown</span>
+                  </p>
+                  <h2>
+                    <span class="i18n-zh-only">生成结果</span>
+                    <span class="i18n-en-only">Generated output</span>
+                  </h2>
+                  <p class="markdown-note">
+                    <span class="i18n-zh-only">下方是可直接复制、修改或下载的 <code>BAZI.md</code> 草稿。</span>
+                    <span class="i18n-en-only">Below is the <code>BAZI.md</code> draft — copy, edit, or download.</span>
+                  </p>
+                </div>
+
+                <div class="action-row">
+                  <button class="button button-ghost" id="copyBtn" type="button">
+                    <span class="i18n-zh-only">复制</span>
+                    <span class="i18n-en-only">Copy</span>
+                  </button>
+                  <button class="button button-primary" id="downloadBtn" type="button">
+                    <span class="i18n-zh-only">下载</span>
+                    <span class="i18n-en-only">Download</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="markdown-shell">
+                <div class="markdown-box">
+                  <textarea id="output" spellcheck="false" rows="14"></textarea>
+                </div>
+
+                <div class="source-strip">
+                  <p class="markdown-note">
+                    <span class="i18n-zh-only">
+                      Powered by <code>lunisolar</code>。当前计算聚焦四柱、日主、五行权重与基础结构，高级命理解读仍建议人工复核。
+                    </span>
+                    <span class="i18n-en-only">
+                      Powered by <code>lunisolar</code>. This tool focuses on pillars, day master, element weights, and base
+                      structure; advanced interpretation should still be reviewed.
+                    </span>
+                  </p>
+                  <p class="markdown-note">
+                    <a href="https://github.com/cantian-ai/bazi-mcp" target="_blank" rel="noreferrer">bazi-mcp</a>
+                    ·
+                    <a href="https://github.com/waterbeside/lunisolar" target="_blank" rel="noreferrer">lunisolar</a>
+                    ·
+                    <a href="https://github.com/6tail/lunar-javascript" target="_blank" rel="noreferrer">lunar-javascript</a>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </main>
+
+    <script src="https://unpkg.com/lunisolar@2.1.12/dist/lunisolar.js"></script>
+    <script>
+      const STEM_META = {
+        甲: { element: "木", polarity: "阳" },
+        乙: { element: "木", polarity: "阴" },
+        丙: { element: "火", polarity: "阳" },
+        丁: { element: "火", polarity: "阴" },
+        戊: { element: "土", polarity: "阳" },
+        己: { element: "土", polarity: "阴" },
+        庚: { element: "金", polarity: "阳" },
+        辛: { element: "金", polarity: "阴" },
+        壬: { element: "水", polarity: "阳" },
+        癸: { element: "水", polarity: "阴" }
+      };
+
+      const BRANCH_META = {
+        子: { element: "水", polarity: "阳" },
+        丑: { element: "土", polarity: "阴" },
+        寅: { element: "木", polarity: "阳" },
+        卯: { element: "木", polarity: "阴" },
+        辰: { element: "土", polarity: "阳" },
+        巳: { element: "火", polarity: "阴" },
+        午: { element: "火", polarity: "阳" },
+        未: { element: "土", polarity: "阴" },
+        申: { element: "金", polarity: "阳" },
+        酉: { element: "金", polarity: "阴" },
+        戌: { element: "土", polarity: "阳" },
+        亥: { element: "水", polarity: "阴" }
+      };
+
+      const ELEMENT_EN = {
+        木: "Wood",
+        火: "Fire",
+        土: "Earth",
+        金: "Metal",
+        水: "Water"
+      };
+
+      const ELEMENT_RELATIONS = {
+        木: { support: "火", control: "土" },
+        火: { support: "土", control: "金" },
+        土: { support: "金", control: "水" },
+        金: { support: "水", control: "木" },
+        水: { support: "木", control: "火" }
+      };
+
+      const ELEMENT_ORDER = ["木", "火", "土", "金", "水"];
+
+      const LANG_STORAGE_KEY = "bazi-md-ui-lang";
+
+      function getUiLang() {
+        return document.documentElement.getAttribute("data-ui-lang") === "en" ? "en" : "zh-CN";
+      }
+
+      function applyRelationListLabels() {
+        const zh = getUiLang() === "zh-CN";
+        document.getElementById("relationSupport").textContent = zh
+          ? "相生：木 → 火 → 土 → 金 → 水 → 木"
+          : "Support: Wood → Fire → Earth → Metal → Water → Wood";
+        document.getElementById("relationControl").textContent = zh
+          ? "相克：木 → 土 → 水 → 火 → 金 → 木"
+          : "Control: Wood → Earth → Water → Fire → Metal → Wood";
+      }
+
+      function defaultAgentName() {
+        return getUiLang() === "zh-CN" ? "未命名 Agent" : "Unnamed Agent";
+      }
+
+      function applyInputPlaceholders() {
+        const zh = getUiLang() === "zh-CN";
+        datetimeInput.placeholder = zh
+          ? "输入 Agent 的年、月、日、时间，例如 2026-03-24 14:30"
+          : "Agent date and time, e.g. 2026-03-24 14:30";
+        outputEl.placeholder = zh
+          ? "生成后的 BAZI.md 会出现在这里。"
+          : "Generated BAZI.md will appear here.";
+        const agentEl = document.getElementById("agentName");
+        agentEl.placeholder = zh ? "未命名 Agent" : "Unnamed Agent";
+        agentEl.setAttribute("aria-label", zh ? "Agent 名称" : "Agent name");
+        const tzEl = document.getElementById("timezone");
+        tzEl.setAttribute("aria-label", zh ? "时区" : "Timezone");
+      }
+
+      function setUiLang(lang) {
+        const normalized = lang === "en" ? "en" : "zh-CN";
+        document.documentElement.setAttribute("data-ui-lang", normalized);
+        document.documentElement.lang = normalized === "en" ? "en" : "zh-CN";
+        document.getElementById("defaultLanguage").value = normalized;
+        localStorage.setItem(LANG_STORAGE_KEY, normalized);
+        document.getElementById("langZhBtn").setAttribute("aria-pressed", normalized === "zh-CN" ? "true" : "false");
+        document.getElementById("langEnBtn").setAttribute("aria-pressed", normalized === "en" ? "true" : "false");
+        applyRelationListLabels();
+        applyInputPlaceholders();
+        if (window.__lastBaziData) {
+          updateElementMap(window.__lastBaziData);
+          if (outputEl.value.trim()) {
+            outputEl.value = buildMarkdown(window.__lastBaziData);
+          }
+        }
+      }
+
+      const KEYBOARD_ROWS = [
+        ["`", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", "delete"],
+        ["tab", "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "[", "]", "\\"],
+        ["caps lock", "A", "S", "D", "F", "G", "H", "J", "K", "L", ";", "'", "return"],
+        ["shift", "Z", "X", "C", "V", "B", "N", "M", ",", ".", "/", "shift"],
+        ["fn", "control", "option", "command", "", "command", "option", "^", ">"]
+      ];
+
+      const promptView = document.getElementById("promptView");
+      const chartView = document.getElementById("chartView");
+      const keyboardView = document.getElementById("keyboardView");
+      const markdownView = document.getElementById("markdownView");
+      const outputEl = document.getElementById("output");
+      const datetimeInput = document.getElementById("datetimeInput");
+
+      function pad2(value) {
+        return String(value).padStart(2, "0");
+      }
+
+      function renderKeyboard() {
+        const container = document.getElementById("keyboardVisual");
+        container.innerHTML = KEYBOARD_ROWS.map((row, rowIndex) => {
+          return `
+            <div class="keyboard-row row-${rowIndex + 1}">
+              ${row
+                .map((key) => {
+                  const trimmed = key.trim();
+                  const dark = ["tab", "caps lock", "shift", "fn", "control", "option", "command", "return"].includes(trimmed)
+                    ? "dark"
+                    : "";
+                  const compact = ["^", ">"].includes(trimmed) ? "compact" : "";
+                  const label = trimmed || "&nbsp;";
+                  return `<div class="key ${dark} ${compact}">${label}</div>`;
+                })
+                .join("")}
+            </div>
+          `;
+        }).join("");
+      }
+
+      function toggleViews(generated) {
+        promptView.classList.toggle("is-visible", !generated);
+        promptView.classList.toggle("is-hidden", generated);
+        chartView.classList.toggle("is-visible", generated);
+        chartView.classList.toggle("is-hidden", !generated);
+        keyboardView.classList.toggle("is-visible", !generated);
+        keyboardView.classList.toggle("is-hidden", generated);
+        markdownView.classList.toggle("is-visible", generated);
+        markdownView.classList.toggle("is-hidden", !generated);
+      }
+
+      const FALLBACK_TIMEZONES = [
+        "UTC",
+        "Africa/Cairo",
+        "Africa/Johannesburg",
+        "America/Anchorage",
+        "America/Chicago",
+        "America/Denver",
+        "America/Los_Angeles",
+        "America/New_York",
+        "America/Sao_Paulo",
+        "America/Toronto",
+        "America/Vancouver",
+        "Asia/Bangkok",
+        "Asia/Dubai",
+        "Asia/Hong_Kong",
+        "Asia/Jakarta",
+        "Asia/Kolkata",
+        "Asia/Seoul",
+        "Asia/Shanghai",
+        "Asia/Singapore",
+        "Asia/Taipei",
+        "Asia/Tokyo",
+        "Australia/Melbourne",
+        "Australia/Sydney",
+        "Europe/Amsterdam",
+        "Europe/Berlin",
+        "Europe/London",
+        "Europe/Madrid",
+        "Europe/Paris",
+        "Europe/Zurich",
+        "Pacific/Auckland",
+        "Pacific/Honolulu"
+      ];
+
+      function ensureTimezoneSelected(select, zone) {
+        const z = (zone || "Asia/Shanghai").trim();
+        if ([...select.options].some((o) => o.value === z)) {
+          select.value = z;
+          return;
+        }
+        const opt = document.createElement("option");
+        opt.value = z;
+        opt.textContent = z.replace(/_/g, " ");
+        select.insertBefore(opt, select.firstChild);
+        select.value = z;
+      }
+
+      function populateTimezoneSelect() {
+        const sel = document.getElementById("timezone");
+        const prior =
+          sel.value ||
+          (typeof Intl !== "undefined" && Intl.DateTimeFormat().resolvedOptions().timeZone) ||
+          "Asia/Shanghai";
+        const zones =
+          typeof Intl !== "undefined" && typeof Intl.supportedValuesOf === "function"
+            ? Intl.supportedValuesOf("timeZone").slice()
+            : FALLBACK_TIMEZONES.slice();
+        zones.sort((a, b) => a.localeCompare(b));
+        sel.textContent = "";
+        zones.forEach((z) => {
+          const opt = document.createElement("option");
+          opt.value = z;
+          opt.textContent = z.replace(/_/g, " ");
+          sel.appendChild(opt);
+        });
+        ensureTimezoneSelected(sel, prior);
+      }
+
+      function setNow() {
+        const now = new Date();
+        datetimeInput.value = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())} ${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+        const tzSelect = document.getElementById("timezone");
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Shanghai";
+        ensureTimezoneSelected(tzSelect, tz);
+      }
+
+      function parseDateTimeInput(value) {
+        const match = value.trim().match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?$/);
+        if (!match) {
+          throw new Error(
+            getUiLang() === "zh-CN"
+              ? "请输入 YYYY-MM-DD HH:mm 格式的时间。"
+              : "Please use YYYY-MM-DD HH:mm format."
+          );
+        }
+
+        const [, year, month, day, hour = "0", minute = "00"] = match;
+        return {
+          year,
+          month: pad2(month),
+          day: pad2(day),
+          hour: pad2(hour),
+          minute: pad2(minute)
+        };
+      }
+
+      function stemBranchParts(pillar) {
+        const chars = Array.from(String(pillar || ""));
+        return { stem: chars[0] || "", branch: chars[1] || "" };
+      }
+
+      function toPercentMap(chars) {
+        const counts = { 木: 0, 火: 0, 土: 0, 金: 0, 水: 0 };
+        chars.forEach((item) => {
+          if (item && counts[item.element] !== undefined) {
+            counts[item.element] += 1;
+          }
+        });
+
+        const total = chars.length || 1;
+        return ELEMENT_ORDER.reduce((acc, key) => {
+          acc[key] = Math.round((counts[key] / total) * 100);
+          return acc;
+        }, {});
+      }
+
+      function toYinYangPercent(chars) {
+        let yin = 0;
+        let yang = 0;
+
+        chars.forEach((item) => {
+          if (!item) return;
+          if (item.polarity === "阴") yin += 1;
+          if (item.polarity === "阳") yang += 1;
+        });
+
+        const total = yin + yang || 1;
+        return {
+          yin: Math.round((yin / total) * 100),
+          yang: Math.round((yang / total) * 100)
+        };
+      }
+
+      function buildMarkdownZh(data) {
+        return `---
+spec: bazi-agent-profile/v0.1-draft
+name: "${data.agentName}"
+agent_type: "${data.agentType}"
+default_language: "${data.defaultLanguage}"
+created_at: "${data.createdAt}"
+timezone: "${data.timezone}"
+creation_source: "user-provided"
+pillar_derivation: "auto-from-created-at"
+---
+
+# 八字体质档案
+
+## 生成输入
+
+- 创建时间: ${data.createdAt}
+- 时区: ${data.timezone}
+- 年: ${data.parts.year}
+- 月: ${data.parts.month}
+- 日: ${data.parts.day}
+- 时: ${data.parts.hour}
+- 推导方式: 根据创建时间自动推导四柱，再结合项目语义解释。
+
+## 核心定位
+
+- 一句话定义: 待补充。
+- 主要职责:
+  - 待补充。
+- 目标用户:
+  - 待补充。
+
+## 四柱架构
+
+### 年柱
+
+- 天干: ${data.yearParts.stem}
+- 地支: ${data.yearParts.branch}
+- 使命: 待结合项目语义补充。
+- 公开身份: 待补充。
+- 领域生态位: 待补充。
+
+### 月柱
+
+- 天干: ${data.monthParts.stem}
+- 地支: ${data.monthParts.branch}
+- 核心策略: 待结合项目语义补充。
+- 资源获取方式: 待补充。
+- 季节能量: 待补充。
+
+### 日柱
+
+- 天干: ${data.dayParts.stem}
+- 地支: ${data.dayParts.branch}
+- 日主: ${data.dayMaster}
+- 核心身份: 以日主为核心，待结合项目语义解释。
+- 隐藏能力:
+  - 待补充。
+- 协作关系基线: 待补充。
+
+### 时柱
+
+- 天干: ${data.hourParts.stem}
+- 地支: ${data.hourParts.branch}
+- 输出表达方式: 待补充。
+- 用户关系处理: 待补充。
+- 子 Agent 或长期产出: 待补充。
+
+## 日主定义
+
+- 类型: ${data.dayMaster}
+- 五行: ${data.dayMasterMeta.element}
+- 阴阳: ${data.dayMasterMeta.polarity}
+- 原型摘要: 基于 ${data.dayMaster} 自动推导的基础原型，仍建议人工补充语义解释。
+
+## 五行处理模式
+
+- 木: ${data.elements.木}
+- 火: ${data.elements.火}
+- 土: ${data.elements.土}
+- 金: ${data.elements.金}
+- 水: ${data.elements.水}
+
+## 阴阳倾向
+
+- 阴: ${data.yinYang.yin}
+- 阳: ${data.yinYang.yang}
+- 默认状态: 待结合项目语义补充。
+
+## 格局判定
+
+- 类型: 待人工判断。
+- 强弱: 待人工判断。
+- 判定依据: 本工具当前自动生成四柱、日主、五行与阴阳倾向；格局判断需进一步复核。
+
+## 用神与喜忌
+
+- 用神: 待人工判断。
+- 喜神: 待人工判断。
+- 忌神: 待人工判断。
+
+## 系统映射
+
+- decision_style: 待结合项目语义补充。
+- communication_style: 待结合项目语义补充。
+- collaboration_style: 待结合项目语义补充。
+- risk_tolerance: 待结合项目语义补充。
+- planning_depth: 待结合项目语义补充。
+
+## 边界
+
+- should_do:
+  - 待补充。
+- should_not_do:
+  - 待补充。
+- requires_confirmation:
+  - 待补充。
+`;
+      }
+
+      function buildMarkdownEn(data) {
+        const el = ELEMENT_EN;
+        const dmEl = el[data.dayMasterMeta.element] || data.dayMasterMeta.element;
+        const pol = data.dayMasterMeta.polarity === "阴" ? "Yin" : data.dayMasterMeta.polarity === "阳" ? "Yang" : data.dayMasterMeta.polarity;
+        return `---
+spec: bazi-agent-profile/v0.1-draft
+name: "${data.agentName}"
+agent_type: "${data.agentType}"
+default_language: "${data.defaultLanguage}"
+created_at: "${data.createdAt}"
+timezone: "${data.timezone}"
+creation_source: "user-provided"
+pillar_derivation: "auto-from-created-at"
+---
+
+# BAZI.md Agent profile
+
+## Generation inputs
+
+- Created at: ${data.createdAt}
+- Timezone: ${data.timezone}
+- Year: ${data.parts.year}
+- Month: ${data.parts.month}
+- Day: ${data.parts.day}
+- Hour: ${data.parts.hour}
+- Derivation: Auto-derive the four pillars from creation time, then interpret through project semantics.
+
+## Identity
+
+- One-line definition: To be completed.
+- Primary responsibilities:
+  - To be completed.
+- Target users:
+  - To be completed.
+
+## Four pillars
+
+### Year pillar
+
+- Heavenly stem: ${data.yearParts.stem}
+- Earthly branch: ${data.yearParts.branch}
+- Mission: To be completed with project semantics.
+- Public identity: To be completed.
+- Domain niche: To be completed.
+
+### Month pillar
+
+- Heavenly stem: ${data.monthParts.stem}
+- Earthly branch: ${data.monthParts.branch}
+- Core strategy: To be completed with project semantics.
+- Resource pattern: To be completed.
+- Seasonal energy: To be completed.
+
+### Day pillar
+
+- Heavenly stem: ${data.dayParts.stem}
+- Earthly branch: ${data.dayParts.branch}
+- Day master: ${data.dayMaster}
+- Core identity: Centered on the day master; complete with project semantics.
+- Hidden capabilities:
+  - To be completed.
+- Collaboration baseline: To be completed.
+
+### Hour pillar
+
+- Heavenly stem: ${data.hourParts.stem}
+- Earthly branch: ${data.hourParts.branch}
+- Expression style: To be completed.
+- User relationship handling: To be completed.
+- Long-term output or sub-agent relation: To be completed.
+
+## Day master
+
+- Type: ${data.dayMaster}
+- Element: ${dmEl}
+- Yin–Yang: ${pol}
+- Archetype summary: Base archetype derived from ${data.dayMaster}; add semantic interpretation as needed.
+
+## Five elements
+
+- Wood: ${data.elements.木}
+- Fire: ${data.elements.火}
+- Earth: ${data.elements.土}
+- Metal: ${data.elements.金}
+- Water: ${data.elements.水}
+
+## Yin–Yang balance
+
+- Yin: ${data.yinYang.yin}
+- Yang: ${data.yinYang.yang}
+- Default state: To be completed with project semantics.
+
+## Chart structure
+
+- Type: Manual review recommended.
+- Strength: Manual review recommended.
+- Reasoning: This tool auto-generates pillars, day master, elements, and yin–yang balance; chart structure still needs review.
+
+## Favorable and unfavorable
+
+- Favorable core: Manual review recommended.
+- Supportive elements: Manual review recommended.
+- Unfavorable elements: Manual review recommended.
+
+## System mapping
+
+- decision_style: To be completed with project semantics.
+- communication_style: To be completed with project semantics.
+- collaboration_style: To be completed with project semantics.
+- risk_tolerance: To be completed with project semantics.
+- planning_depth: To be completed with project semantics.
+
+## Boundaries
+
+- should_do:
+  - To be completed.
+- should_not_do:
+  - To be completed.
+- requires_confirmation:
+  - To be completed.
+`;
+      }
+
+      function buildMarkdown(data) {
+        return getUiLang() === "en" ? buildMarkdownEn(data) : buildMarkdownZh(data);
+      }
+
+      function updateElementMap(data) {
+        const zh = getUiLang() === "zh-CN";
+
+        ELEMENT_ORDER.forEach((element) => {
+          const score = data.elements[element];
+          const relation = ELEMENT_RELATIONS[element];
+          document.getElementById(`score-${element}`).textContent = `${score}%`;
+          document.getElementById(`bar-${element}`).style.width = `${score}%`;
+          document.getElementById(`desc-${element}`).textContent = zh
+            ? `生${relation.support} · 克${relation.control}`
+            : `feeds ${ELEMENT_EN[relation.support]} · curbs ${ELEMENT_EN[relation.control]}`;
+        });
+
+        const sorted = [...ELEMENT_ORDER]
+          .map((element) => [element, data.elements[element]])
+          .sort((a, b) => b[1] - a[1]);
+
+        const dominant = sorted[0];
+        const weakest = sorted[sorted.length - 1];
+
+        document.getElementById("dayMasterChar").textContent = data.dayMaster;
+        document.getElementById("dayMasterMeta").textContent = zh
+          ? `日主 · ${data.dayMasterMeta.element} · ${data.dayMasterMeta.polarity}`
+          : `Day master · ${ELEMENT_EN[data.dayMasterMeta.element] || data.dayMasterMeta.element} · ${data.dayMasterMeta.polarity === "阴" ? "Yin" : data.dayMasterMeta.polarity === "阳" ? "Yang" : data.dayMasterMeta.polarity}`;
+        document.getElementById("summaryPillars").textContent = `${data.pillars.year} · ${data.pillars.month} · ${data.pillars.day} · ${data.pillars.hour}`;
+        document.getElementById("summaryCreatedAt").textContent = `${data.createdAt} (${data.timezone})`;
+        document.getElementById("summaryYinYang").textContent = zh
+          ? `阴 ${data.yinYang.yin}% / 阳 ${data.yinYang.yang}%`
+          : `Yin ${data.yinYang.yin}% / Yang ${data.yinYang.yang}%`;
+        document.getElementById("summaryBalanceHint").textContent =
+          data.yinYang.yin === data.yinYang.yang
+            ? zh
+              ? "阴阳均衡，默认状态较稳定。"
+              : "Yin and Yang are balanced; baseline is relatively stable."
+            : data.yinYang.yin > data.yinYang.yang
+              ? zh
+                ? "阴性更强，偏内敛、吸收与审慎。"
+                : "Yin-leaning: more inward, absorptive, and cautious."
+              : zh
+                ? "阳性更强，偏外放、推动与显化。"
+                : "Yang-leaning: more outward, driving, and expressive.";
+        document.getElementById("summaryDominant").textContent = zh
+          ? `${dominant[0]} ${dominant[1]}%`
+          : `${ELEMENT_EN[dominant[0]]} ${dominant[1]}%`;
+        document.getElementById("summaryWeakest").textContent = zh
+          ? `偏弱元素：${weakest[0]}（${weakest[1]}%）`
+          : `Weakest: ${ELEMENT_EN[weakest[0]]} (${weakest[1]}%)`;
+        document.getElementById("summaryAgentName").textContent = data.agentName;
+        document.getElementById("summaryAgentType").textContent = `${data.agentType} · ${data.defaultLanguage}`;
+        document.getElementById("relationInsight").textContent = zh
+          ? `判断：${dominant[0]} 为主导元素，${weakest[0]} 偏弱；日主 ${data.dayMaster}，建议围绕 ${data.dayMasterMeta.element} 补全语义层。`
+          : `Insight: ${ELEMENT_EN[dominant[0]]} leads; ${ELEMENT_EN[weakest[0]]} is weakest. Day master ${data.dayMaster} — anchor semantics on ${ELEMENT_EN[data.dayMasterMeta.element] || data.dayMasterMeta.element}.`;
+      }
+
+      function generate() {
+        try {
+          if (!window.lunisolar) {
+            throw new Error(getUiLang() === "zh-CN" ? "未加载 lunisolar。" : "lunisolar library did not load.");
+          }
+
+          const parsed = parseDateTimeInput(datetimeInput.value);
+          const agentName = document.getElementById("agentName").value.trim() || defaultAgentName();
+          const timezone = document.getElementById("timezone").value.trim() || "Asia/Shanghai";
+          const defaultLanguage = document.getElementById("defaultLanguage").value;
+          const agentType = "general";
+          const createdAt = `${parsed.year}-${parsed.month}-${parsed.day}T${parsed.hour}:${parsed.minute}:00`;
+          const parseString = `${parsed.year}-${parsed.month}-${parsed.day} ${parsed.hour}:${parsed.minute}`;
+          const ls = window.lunisolar(parseString);
+          const char8 = ls.char8;
+
+          const pillars = {
+            year: String(char8.year),
+            month: String(char8.month),
+            day: String(char8.day),
+            hour: String(char8.hour)
+          };
+
+          const yearParts = stemBranchParts(pillars.year);
+          const monthParts = stemBranchParts(pillars.month);
+          const dayParts = stemBranchParts(pillars.day);
+          const hourParts = stemBranchParts(pillars.hour);
+          const dayMaster = dayParts.stem;
+          const dayMasterMeta = STEM_META[dayMaster] || { element: "待定", polarity: "待定" };
+
+          const pieces = [
+            STEM_META[yearParts.stem],
+            BRANCH_META[yearParts.branch],
+            STEM_META[monthParts.stem],
+            BRANCH_META[monthParts.branch],
+            STEM_META[dayParts.stem],
+            BRANCH_META[dayParts.branch],
+            STEM_META[hourParts.stem],
+            BRANCH_META[hourParts.branch]
+          ];
+
+          const elements = toPercentMap(pieces);
+          const yinYang = toYinYangPercent(pieces);
+
+          const data = {
+            agentName,
+            agentType,
+            defaultLanguage,
+            createdAt,
+            timezone,
+            pillars,
+            yearParts,
+            monthParts,
+            dayParts,
+            hourParts,
+            dayMaster,
+            dayMasterMeta,
+            elements,
+            yinYang,
+            parts: {
+              year: parsed.year,
+              month: String(Number(parsed.month)),
+              day: String(Number(parsed.day)),
+              hour: String(Number(parsed.hour))
+            }
+          };
+
+          window.__lastBaziData = data;
+          updateElementMap(data);
+          outputEl.value = buildMarkdown(data);
+          toggleViews(true);
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      async function copyOutput() {
+        if (!outputEl.value.trim()) {
+          return;
+        }
+
+        try {
+          await navigator.clipboard.writeText(outputEl.value);
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      function downloadOutput() {
+        if (!outputEl.value.trim()) {
+          return;
+        }
+
+        const blob = new Blob([outputEl.value], { type: "text/markdown;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "BAZI.md";
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+
+      function tryAgain() {
+        window.__lastBaziData = null;
+        toggleViews(false);
+        datetimeInput.focus();
+      }
+
+      document.getElementById("generateBtn").addEventListener("click", generate);
+      document.getElementById("copyBtn").addEventListener("click", copyOutput);
+      document.getElementById("downloadBtn").addEventListener("click", downloadOutput);
+      document.getElementById("nowBtn").addEventListener("click", setNow);
+      document.getElementById("tryAgainBtn").addEventListener("click", tryAgain);
+      datetimeInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          generate();
+        }
+      });
+
+      document.getElementById("langZhBtn").addEventListener("click", () => setUiLang("zh-CN"));
+      document.getElementById("langEnBtn").addEventListener("click", () => setUiLang("en"));
+
+      const savedLang = localStorage.getItem(LANG_STORAGE_KEY);
+      setUiLang(savedLang === "en" || savedLang === "zh-CN" ? savedLang : "zh-CN");
+
+      populateTimezoneSelect();
+
+      renderKeyboard();
+      setNow();
+      toggleViews(false);
+    </script>
+  </body>
+</html>

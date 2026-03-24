@@ -1,0 +1,538 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/bazi-profile.schema.json",
+  "title": "BAZI.md Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "spec",
+    "name",
+    "agent_type",
+    "default_language",
+    "identity",
+    "four_pillars",
+    "constitution",
+    "system_mapping",
+    "boundaries"
+  ],
+  "properties": {
+    "spec": {
+      "type": "string",
+      "pattern": "^bazi-agent-profile\\/v[0-9]+\\.[0-9]+(-draft)?$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "agent_type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "default_language": {
+      "type": "string",
+      "minLength": 2
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "one_line_definition",
+        "primary_responsibilities",
+        "target_users"
+      ],
+      "properties": {
+        "one_line_definition": {
+          "type": "string"
+        },
+        "primary_responsibilities": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "target_users": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "four_pillars": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "year",
+        "month",
+        "day",
+        "hour"
+      ],
+      "properties": {
+        "year": {
+          "$ref": "#/$defs/pillar"
+        },
+        "month": {
+          "$ref": "#/$defs/pillar"
+        },
+        "day": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/pillar"
+            },
+            {
+              "type": "object",
+              "required": [
+                "day_master"
+              ],
+              "properties": {
+                "day_master": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          ]
+        },
+        "hour": {
+          "$ref": "#/$defs/pillar"
+        }
+      }
+    },
+    "constitution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "five_elements",
+        "yin_yang",
+        "day_master",
+        "ten_gods",
+        "chart_structure",
+        "favorable_balance"
+      ],
+      "properties": {
+        "five_elements": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "wood",
+            "fire",
+            "earth",
+            "metal",
+            "water"
+          ],
+          "properties": {
+            "wood": {
+              "$ref": "#/$defs/elementProfile"
+            },
+            "fire": {
+              "$ref": "#/$defs/elementProfile"
+            },
+            "earth": {
+              "$ref": "#/$defs/elementProfile"
+            },
+            "metal": {
+              "$ref": "#/$defs/elementProfile"
+            },
+            "water": {
+              "$ref": "#/$defs/elementProfile"
+            },
+            "support_chain": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "control_chain": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "current_imbalance": {
+              "type": "string"
+            }
+          }
+        },
+        "yin_yang": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "yin",
+            "yang",
+            "default_state"
+          ],
+          "properties": {
+            "yin": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "yang": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "default_state": {
+              "type": "string"
+            },
+            "imbalance_pattern": {
+              "type": "string"
+            }
+          }
+        },
+        "day_master": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "element",
+            "polarity",
+            "summary",
+            "suitable_tasks",
+            "unsuitable_tasks"
+          ],
+          "properties": {
+            "type": {
+              "type": "string"
+            },
+            "element": {
+              "type": "string"
+            },
+            "polarity": {
+              "type": "string"
+            },
+            "summary": {
+              "type": "string"
+            },
+            "core_traits": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "suitable_roles": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "suitable_tasks": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "unsuitable_tasks": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "collaboration_implications": {
+              "type": "string"
+            }
+          }
+        },
+        "ten_gods": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "dominant",
+            "support",
+            "suppressed"
+          ],
+          "properties": {
+            "favorable_gods": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "challenging_gods": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "dominant": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string"
+              }
+            },
+            "support": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "suppressed": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "module_mapping": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "chart_structure": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "strength",
+            "reasoning",
+            "operational_implication"
+          ],
+          "properties": {
+            "type": {
+              "type": "string"
+            },
+            "strength": {
+              "type": "string"
+            },
+            "reasoning": {
+              "type": "string"
+            },
+            "operational_implication": {
+              "type": "string"
+            }
+          }
+        },
+        "favorable_balance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "favorable",
+            "supportive",
+            "unfavorable"
+          ],
+          "properties": {
+            "favorable": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string"
+              }
+            },
+            "supportive": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "unfavorable": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "indirectly_harmful": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "neutral": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "shen_sha": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "lifecycle": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "stage",
+              "theme"
+            ],
+            "properties": {
+              "stage": {
+                "type": "string"
+              },
+              "theme": {
+                "type": "string"
+              },
+              "notes": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "system_mapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision_style",
+        "communication_style",
+        "collaboration_style",
+        "risk_tolerance",
+        "planning_depth",
+        "memory_bias"
+      ],
+      "properties": {
+        "decision_style": {
+          "type": "string"
+        },
+        "communication_style": {
+          "type": "string"
+        },
+        "collaboration_style": {
+          "type": "string"
+        },
+        "risk_tolerance": {
+          "type": "string"
+        },
+        "planning_depth": {
+          "type": "string"
+        },
+        "memory_bias": {
+          "type": "string"
+        },
+        "context_sensitivity": {
+          "type": "string"
+        },
+        "failure_mode": {
+          "type": "string"
+        },
+        "recovery_style": {
+          "type": "string"
+        }
+      }
+    },
+    "boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "should_do",
+        "should_not_do",
+        "requires_confirmation"
+      ],
+      "properties": {
+        "should_do": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "should_not_do": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "requires_confirmation": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "pillar": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stem",
+        "branch"
+      ],
+      "properties": {
+        "stem": {
+          "type": "string",
+          "minLength": 1
+        },
+        "branch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mission": {
+          "type": "string"
+        },
+        "public_identity": {
+          "type": "string"
+        },
+        "domain_niche": {
+          "type": "string"
+        },
+        "strategy": {
+          "type": "string"
+        },
+        "resource_pattern": {
+          "type": "string"
+        },
+        "seasonal_energy": {
+          "type": "string"
+        },
+        "day_master": {
+          "type": "string"
+        },
+        "core_identity": {
+          "type": "string"
+        },
+        "hidden_capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "collaboration_baseline": {
+          "type": "string"
+        },
+        "expression_style": {
+          "type": "string"
+        },
+        "user_relationship_handling": {
+          "type": "string"
+        },
+        "long_term_output": {
+          "type": "string"
+        }
+      }
+    },
+    "elementProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "weight"
+      ],
+      "properties": {
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "processing_mode": {
+          "type": "string"
+        },
+        "representative_capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

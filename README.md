@@ -4,8 +4,6 @@
 
 </div>
 
-![BAZI.md web demo](https://bazimd.github.io/bazi.md/assets/readme-hero2.png)
-
 一个面向 AI Agent 的开源标准：用 `BAZI.md` 定义稳定体质，用 `AGENTS.md` 定义仓库执行规则。  
 An open-source standard for AI agents: use `BAZI.md` for stable constitution, and `AGENTS.md` for repository execution rules.
 
@@ -44,6 +42,8 @@ The live demo lets you enter a timestamp and timezone, derive the Four Pillars, 
 
 地址： [https://bazimd.github.io/bazi.md/](https://bazimd.github.io/bazi.md/)  
 Live URL: [https://bazimd.github.io/bazi.md/](https://bazimd.github.io/bazi.md/)
+
+![BAZI.md web demo](https://bazimd.github.io/bazi.md/assets/readme-hero.png)
 
 ## Use Cases
 
